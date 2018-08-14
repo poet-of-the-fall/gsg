@@ -8,6 +8,8 @@ import random
 import xml.etree.ElementTree as ET
 import math
 import configparser
+import pdfkit
+from tkinterhtml import HtmlFrame
 # import tkinter for python2 or python3
 try:
     # Python2
@@ -147,6 +149,7 @@ class MainWindow(ttk.Frame):
         for i in range(len(values)):
             values[i] = [int(x) for x in values[i].split(",")]
         self.values = values
+        self.calculateGrid()
 
     def createPane(self):
         self.values = []
@@ -155,7 +158,6 @@ class MainWindow(ttk.Frame):
             for j in range(self.gridColumns.get()):
                 val.append(random.randrange(self.valuesMin.get(), self.valuesMax.get(), self.valuesSteps.get()))
             self.values.append(val)
-        print(self.values)
         self.calculateGrid()
         self.enablePaneButtons()
         filename = os.getcwd() + "/" + str(datetime.datetime.now()).replace(":", "-").replace(" ", "-") + ".ini"
@@ -181,8 +183,7 @@ class MainWindow(ttk.Frame):
         cfgfile.close()
 
     def showPane(self):
-        print("ghi")
-        # TODO Show pane with zone values
+        self.showPaneWindow()
 
     def loadResult(self):
         filename = askopenfilename(initialdir = os.getcwd(), parent = self.root, title = "Datei auswählen", filetypes = [("xml","*.xml")])
@@ -191,12 +192,10 @@ class MainWindow(ttk.Frame):
         self.enableEvaluationButtons()
 
     def showEval(self):
-        print("mno")
-        # TODO overview window for results
+        self.showResultWindow()
 
     def exportEval(self):
-        print("pqr")
-        # TODO PDF?
+        pdfkit.from_string(self.html, str(datetime.date.today()) + ".pdf")
 
     def disablePaneButtons(self):
         self.showPaneButton.state(["disabled"])
@@ -242,6 +241,7 @@ class MainWindow(ttk.Frame):
 
     def evaluateResult(self):
         scoring = self.Scoring.get()
+        # evaluate results
         for shooter in self.results:
             shots = 0
             for shot in shooter["shots"]:
@@ -254,7 +254,14 @@ class MainWindow(ttk.Frame):
                 elif (scoring == "sum"):
                     shot["result"] = sum(self.getFieldValue(self.getTouchedFields(shot)))
                 shots = shots + shot["result"]
-            print(shooter["firstname"], shooter["lastname"], ":", shots)
+            shooter["result"] = shots
+        # sort results in descending order of result
+        self.results.sort(key=lambda x: x["result"], reverse=True)
+        # create html output of result
+        self.html = "<html><body><h1>Ergebnisse der Gl&uuml;cksscheibe</h1><h4>Datum: " + str(datetime.date.today()) + "</h4><table><tr><th>Name:</th><th>Punkte:</th></tr>"
+        for shooter in self.results:
+            self.html = self.html + "<tr><td>" + shooter["firstname"] + " " + shooter["lastname"] + "</td><td>" + str(shooter["result"]) + "</td></tr>"
+        self.html = self.html + "</table></body></html>"
 
     def getTouchedFields(self, shot):
         hits = []
@@ -331,6 +338,66 @@ class MainWindow(ttk.Frame):
             return val
         else:
             return self.values[field[0]][field[1]]
+
+    def showResultWindow(self):
+        root = Toplevel(self.root)
+        root.title('Ergebnisse')
+        root.grid_columnconfigure(0, weight=1)
+        root.grid_rowconfigure(0, weight=1)
+        root.resizable(True, True)
+        innerOptions = dict(padx=5, pady=2)
+        frame = ttk.Frame(root)
+        frame.pack()
+        frame.grid_columnconfigure(0, weight=1)
+        row = 0
+
+        for shooter in self.results:
+            nameLabel = ttk.Label(frame, text=shooter["firstname"] + " " + shooter["lastname"])
+            nameLabel.grid(column=0, row=row, sticky=W, **innerOptions)
+            resultLabel = ttk.Label(frame, text=str(shooter["result"]))
+            resultLabel.grid(column=1, row=row, sticky=E, **innerOptions)
+            showResultPane = ttk.Button(frame, text="Ergebnis anzeigen", command=lambda: self.showPaneWindow(shooter))
+            showResultPane.grid(column=2, row=row, sticky=E, **innerOptions)
+            row = row + 1
+        
+    def showPaneWindow(self, result=None):
+        root = Toplevel(self.root)
+        if (result):
+            root.title("Ergebnis von " + result["firstname"] + " " + result["lastname"])
+        else:
+            root.title("Glücksscheibe")
+        root.grid_columnconfigure(0, weight=1)
+        root.grid_rowconfigure(0, weight=1)
+        root.resizable(False, False)
+        resizeFactor = 5
+        offset = 3
+        width = self.paneWidth.get() * 10 * resizeFactor + offset
+        height= self.paneHeight.get() * 10 * resizeFactor + offset
+        cellWidth = abs(self.horizontal[0] - self.horizontal[1]) * resizeFactor
+        cellHeight = abs(self.vertical[0] - self.vertical[1]) * resizeFactor
+        bulletRadius = self.bulletSize.get() / 2 * resizeFactor
+        horizontalOffset = abs(self.horizontal[0])
+        verticalOffset = abs(self.vertical[0])
+        canvas = Canvas(root, width=width, height=height)
+        canvas.pack()
+
+        # draw results if passed
+        if result:
+            for shot in result["shots"]:
+                x = (int(shot["x"]) / int(shot["resolution"]) + horizontalOffset) * resizeFactor + offset
+                y = (int(shot["y"]) / int(shot["resolution"]) + verticalOffset) * resizeFactor + offset
+                canvas.create_oval(x - bulletRadius, y - bulletRadius, x + bulletRadius, y + bulletRadius, fill='gray25')
+
+        # draw grid and values
+        for line in self.horizontal:
+            canvas.create_line(0, (line + horizontalOffset) * resizeFactor + offset, width, (line + horizontalOffset) * resizeFactor + offset)
+        for line in self.vertical:
+            canvas.create_line((line + verticalOffset) * resizeFactor + offset, 0, (line + verticalOffset) * resizeFactor + offset, height)
+        for row in range(len(self.values)):
+            for column in range(len(self.values[row])):
+                x = (self.horizontal[row] + horizontalOffset) * resizeFactor + offset + cellWidth / 2
+                y = (self.vertical[column] + verticalOffset) * resizeFactor + offset + cellHeight / 2
+                canvas.create_text((x, y), text=str(self.values[row][column]))
 
 if __name__ == '__main__':
     MainWindow.main()
