@@ -69,9 +69,9 @@ class MainWindow(ttk.Frame):
         self.paneHeightEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.paneHeight)
         self.bulletSizeLabel = ttk.Label(self.generationFrame, text='Kugeldurchmesser (mm)')
         self.bulletSizeEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.bulletSize)
-        self.gridColumnsLabel = ttk.Label(self.generationFrame, text='Anzahl Zeilen:')
+        self.gridColumnsLabel = ttk.Label(self.generationFrame, text='Anzahl Spalten:')
         self.gridColumnsEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.gridColumns)
-        self.gridRowsLabel = ttk.Label(self.generationFrame, text='Anzahl Spalten:')
+        self.gridRowsLabel = ttk.Label(self.generationFrame, text='Anzahl Zeilen:')
         self.gridRowsEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.gridRows)
         self.valuesMinLabel = ttk.Label(self.generationFrame, text='Kleinster Wert:')
         self.valuesMinEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.valuesMin)
@@ -153,9 +153,9 @@ class MainWindow(ttk.Frame):
 
     def createPane(self):
         self.values = []
-        for i in range(self.gridRows.get()):
+        for i in range(self.gridColumns.get()):
             val = []
-            for j in range(self.gridColumns.get()):
+            for j in range(self.gridRows.get()):
                 val.append(random.randrange(self.valuesMin.get(), self.valuesMax.get(), self.valuesSteps.get()))
             self.values.append(val)
         self.calculateGrid()
@@ -225,8 +225,10 @@ class MainWindow(ttk.Frame):
         tree = ET.parse(filename)
         root = tree.getroot()
         self.results = []
+        id = 0
         for child in root:
             shooter = {}
+            shooter["id"] = id
             shooter["lastname"] = child.find("Shooter").find("FamilyName").text
             shooter["firstname"] = child.find("Shooter").find("GivenName").text
             shooter["shots"] = []
@@ -237,6 +239,7 @@ class MainWindow(ttk.Frame):
                 shot["y"] = aiming.find("Coordinate").find("CCoordinate").find("Y").text
                 shooter["shots"].append(shot)
             self.results.append(shooter)
+            id = id + 1
         self.evaluateResult()
 
     def evaluateResult(self):
@@ -356,7 +359,7 @@ class MainWindow(ttk.Frame):
             nameLabel.grid(column=0, row=row, sticky=W, **innerOptions)
             resultLabel = ttk.Label(frame, text=str(shooter["result"]))
             resultLabel.grid(column=1, row=row, sticky=E, **innerOptions)
-            showResultPane = ttk.Button(frame, text="Ergebnis anzeigen", command=lambda: self.showPaneWindow(shooter))
+            showResultPane = ttk.Button(frame, text="Ergebnis anzeigen", command=lambda shooter=shooter: self.showPaneWindow(shooter))
             showResultPane.grid(column=2, row=row, sticky=E, **innerOptions)
             row = row + 1
         
@@ -373,8 +376,8 @@ class MainWindow(ttk.Frame):
         offset = 3
         width = self.paneWidth.get() * 10 * resizeFactor + offset
         height= self.paneHeight.get() * 10 * resizeFactor + offset
-        cellWidth = abs(self.horizontal[0] - self.horizontal[1]) * resizeFactor
-        cellHeight = abs(self.vertical[0] - self.vertical[1]) * resizeFactor
+        cellWidth = self.horizontalStep * resizeFactor
+        cellHeight = self.verticalStep * resizeFactor
         bulletRadius = self.bulletSize.get() / 2 * resizeFactor
         horizontalOffset = abs(self.horizontal[0])
         verticalOffset = abs(self.vertical[0])
@@ -389,16 +392,16 @@ class MainWindow(ttk.Frame):
                 canvas.create_oval(x - bulletRadius, y - bulletRadius, x + bulletRadius, y + bulletRadius, fill='gray25')
 
         # draw grid and values
+        print(self.values, self.horizontal, self.vertical)
         for line in self.horizontal:
-            canvas.create_line(0, (line + horizontalOffset) * resizeFactor + offset, width, (line + horizontalOffset) * resizeFactor + offset)
+            canvas.create_line((line + horizontalOffset) * resizeFactor + offset, 0, (line + horizontalOffset) * resizeFactor + offset, height)
         for line in self.vertical:
-            canvas.create_line((line + verticalOffset) * resizeFactor + offset, 0, (line + verticalOffset) * resizeFactor + offset, height)
-        for row in range(len(self.values)):
-            for column in range(len(self.values[row])):
-                x = (self.horizontal[row] + horizontalOffset) * resizeFactor + offset + cellWidth / 2
-                y = (self.vertical[column] + verticalOffset) * resizeFactor + offset + cellHeight / 2
-                canvas.create_text((x, y), text=str(self.values[row][column]))
+            canvas.create_line(0, (line + verticalOffset) * resizeFactor + offset, width, (line + verticalOffset) * resizeFactor + offset)
+        for column in range(len(self.values)):
+            for row in range(len(self.values[column])):
+                x = (self.horizontal[column] + horizontalOffset) * resizeFactor + offset + cellWidth / 2
+                y = (self.vertical[row] + verticalOffset) * resizeFactor + offset + cellHeight / 2
+                canvas.create_text(x, y, text=str(self.values[column][row]))
 
 if __name__ == '__main__':
     MainWindow.main()
-
