@@ -1,6 +1,6 @@
 # Glücksscheibengenerator (GSG)
 
-Dieses Projekt wertet XML Exporte der Meyton Schießanalge als Glücksscheiben aus.
+Dieses Projekt wertet XML Exporte der Meyton Schießanlage als Glücksscheiben aus.
 
 ## Installation
 
@@ -22,7 +22,7 @@ Zuerst müssen die Ergebnisse exportiert werden. Dazu am besten eine eigene Sche
 
 *TODO Beispiel und Bilder einfügen*
 
-Jetzt kann das Programm über das Terminal geöffnt werden:
+Jetzt kann das Programm über das Terminal geöffnet werden:
 
 ```bash
 ./gsg.py
@@ -39,9 +39,9 @@ Hier kann die Glücksscheibe beschrieben werden. Neben der Ausdehnung (Breite un
 - Meiste Abdeckung: werden mehrere Felder abgedeckt, wird nur des Feld mit der meisten Abdeckung gewertet (Mittelpunkt des Schusses)
 - Summe aller Werte: Es werden alle Berührten Felder eines Schusses addiert
 
-Durch einen Klick auf **Glücksscheibe erzeugen & speichern** wird aus den vorher angegeben Daten eine Glücksscheibe erstellt und autmoatisch im Ordner des Programms abgelegt.
+Durch einen Klick auf **Glücksscheibe erzeugen & speichern** wird aus den vorher angegeben Daten eine Glücksscheibe erstellt und automatisch im Ordner des Programms abgelegt.
 
-Alte Glücksscheiben können jeder Zeit durch einen Klick auf **vorhandene Glücksscheibe laden** erneut geladen werden (hier die Datei der GLücksscheibe auswählen, die verwendet werden soll).
+Alte Glücksscheiben können jeder Zeit durch einen Klick auf **vorhandene Glücksscheibe laden** erneut geladen werden (hier die Datei der Glücksscheibe auswählen, die verwendet werden soll).
 
 Mit **Glücksscheibe anzeigen** kann die aktuell geladene Glücksscheibe angezeigt werden. Es öffnet sich ein Fenster, dass dei Felder und deren Werte anzeigt.
 
@@ -55,11 +55,11 @@ Mit einem Klick auf **Ergebnisse anzeigen** können die Ergebnisse der Schützen
 
 ## Weitere Möglichkeiten
 
-Falls gewünscht können die Werte der Glücksscheibe auch selbst defniert werden. Dazu einfach eine Scheibe erzeugen und die **.ini** Datei öffnen. Hier ist am Ende der Datei ein Bereich mit der Definition der Werte:
+Falls gewünscht können die Werte der Glücksscheibe auch selbst definiert werden. Dazu einfach eine Scheibe erzeugen und die **.ini** Datei öffnen. Hier ist am Ende der Datei ein Bereich mit der Definition der Werte:
 
 ```
 [Pane]
 values = ...
 ```
 
-Die Werte sind hier nach Zeilen und Spalten durch Kommata und Schrägstrich getrennt. Die Werte können geändert werden, müssen aber der angegebe Anzahl an Zeilen und Spalten entsprechen. Die Datei kann nach dem speichern einfach über **vorhandene Glücksscheibe laden** neu geladen werden.
+Die Werte sind hier nach Zeilen und Spalten durch Kommata und Schrägstrich getrennt. Die Werte können geändert werden, müssen aber der angegebenen Anzahl an Zeilen und Spalten entsprechen. Die Datei kann nach dem speichern einfach über **vorhandene Glücksscheibe laden** neu geladen werden.
