@@ -8,7 +8,7 @@ Vorab bitte folgendes installieren:
 
 - Python 3
 - PIP
-- [wkhtmltopdf] (https://wkhtmltopdf.org)
+- [wkhtmltopdf](https://wkhtmltopdf.org)
 
 und die benötigten Packete mit PIP installieren
 
