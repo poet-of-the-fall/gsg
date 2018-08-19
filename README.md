@@ -10,7 +10,7 @@ Vorab bitte folgendes installieren:
 - PIP
 - [wkhtmltopdf](https://wkhtmltopdf.org)
 
-und die benötigten Packete mit PIP installieren
+und die benötigten Pakete mit PIP installieren
 
 ```bash
 pip install -r requirements.txt
