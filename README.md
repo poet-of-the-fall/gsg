@@ -6,14 +6,15 @@ Dieses Projekt wertet XML Exporte der Meyton Schießanlage als Glücksscheiben a
 
 Vorab bitte folgendes installieren:
 
-- Python 3
-- PIP
-- [wkhtmltopdf](https://wkhtmltopdf.org)
+- Python 3 (sollte vorinstalliert sein)
+- PIP (sollte vorinstalliert sein)
+- Tkinter (```sudo zypper install python3-tk```s)
+- [wkhtmltopdf](https://wkhtmltopdf.org) (falls installierbar)
 
 und die benötigten Pakete mit PIP installieren
 
 ```bash
-pip install -r requirements.txt
+sudo pip install -r requirements.txt
 ```
 
 ## Nutzung

@@ -153,9 +153,9 @@ class MainWindow(ttk.Frame):
 
     def createPane(self):
         self.values = []
-        for i in range(self.gridColumns.get()):
+        for i in range(self.gridRows.get()):
             val = []
-            for j in range(self.gridRows.get()):
+            for j in range(self.gridColumns.get()):
                 val.append(random.randrange(self.valuesMin.get(), self.valuesMax.get(), self.valuesSteps.get()))
             self.values.append(val)
         self.calculateGrid()
@@ -219,7 +219,7 @@ class MainWindow(ttk.Frame):
         self.vertical = []
         self.verticalStep = self.paneHeight.get() * 10 / self.gridRows.get()
         for i in range(self.gridRows.get() + 1):
-            self.vertical.append(i * self.verticalStep - (self.paneHeight.get() * 10 / 2)) 
+            self.vertical.append((self.paneHeight.get() * 10 / 2) - i * self.verticalStep) 
 
     def parseResultFile(self, filename):
         tree = ET.parse(filename)
@@ -249,13 +249,17 @@ class MainWindow(ttk.Frame):
             shots = 0
             for shot in shooter["shots"]:
                 if (scoring == "min"):
-                    shot["result"] = min(self.getFieldValue(self.getTouchedFields(shot)))
+                    shot["values"] = self.getFieldValue(self.getTouchedFields(shot))
+                    shot["result"] = min(shot["values"])
                 elif (scoring == "max"):
-                    shot["result"] = max(self.getFieldValue(self.getTouchedFields(shot)))
+                    shot["values"] = self.getFieldValue(self.getTouchedFields(shot))
+                    shot["result"] = max(shot["values"])
                 elif (scoring == "cov"):
-                    shot["result"] = self.getFieldValue(self.getCenterField(shot))
+                    shot["values"] = self.getFieldValue(self.getCenterField(shot))
+                    shot["result"] = shot["values"]
                 elif (scoring == "sum"):
-                    shot["result"] = sum(self.getFieldValue(self.getTouchedFields(shot)))
+                    shot["values"] = self.getFieldValue(self.getTouchedFields(shot))
+                    shot["result"] = sum(shot["values"])
                 shots = shots + shot["result"]
             shooter["result"] = shots
         # sort results in descending order of result
@@ -275,9 +279,10 @@ class MainWindow(ttk.Frame):
         # look horizontal left
         y = center[1]
         x = center[0] - 1
-        while (x >= 0) and ((horizontalOffset - (self.bulletSize.get() / 2)) < self.horizontal[x]):
+        while (x >= 0) and ((horizontalOffset - (self.bulletSize.get() / 2)) < self.horizontal[x + 1]):
             hits.append([x,y])
             x = x - 1
+        # look horizontal right
         x = center[0] + 1
         while (x < len(self.horizontal)) and ((horizontalOffset + (self.bulletSize.get() / 2)) > self.horizontal[x]):
             hits.append([x,y])
@@ -285,31 +290,32 @@ class MainWindow(ttk.Frame):
         # look vertical top
         x = center[0]
         y = center[1] - 1
-        while (y >= 0) and ((verticalOffset + (self.bulletSize.get() / 2)) < self.vertical[y]):
+        while (y >= 0) and ((verticalOffset + (self.bulletSize.get() / 2)) > self.vertical[y + 1]):
             hits.append([x,y])
             # look upper left
-            x = x - 1
-            while (x >= 0) and (self.getDistance(shot["x"], shot["y"], self.horizontal[x + 1], self.vertical[y + 1]) < (self.bulletSize.get() / 2)):
+            x = center[0] - 1
+            while (x >= 0) and (self.getDistance(horizontalOffset, verticalOffset, self.horizontal[x + 1], self.vertical[y + 1]) < (self.bulletSize.get() / 2)):
                 hits.append([x,y])
                 x = x - 1
             # look upper right
             x = center[0] + 1
-            while (x < len(self.horizontal)) and (self.getDistance(shot["x"], shot["y"], self.horizontal[x], self.vertical[y + 1]) < (self.bulletSize.get() / 2)):
+            while (x < len(self.horizontal)) and (self.getDistance(horizontalOffset, verticalOffset, self.horizontal[x], self.vertical[y + 1]) < (self.bulletSize.get() / 2)):
                 hits.append([x,y])
                 x = x + 1
             y = y - 1
         # look vertical bottom
+        x = center[0]
         y = center[1] + 1
-        while (y < len(self.vertical)) and ((verticalOffset + (self.bulletSize.get() / 2)) > self.vertical[y]):
+        while (y < len(self.vertical)) and ((verticalOffset - (self.bulletSize.get() / 2)) < self.vertical[y]):
             hits.append([x,y])
             # look lower left
-            x = x - 1
-            while (x >= 0) and (self.getDistance(shot["x"], shot["y"], self.horizontal[x + 1], self.vertical[y]) < (self.bulletSize.get() / 2)):
+            x = center[0] - 1
+            while (x >= 0) and (self.getDistance(horizontalOffset, verticalOffset, self.horizontal[x + 1], self.vertical[y]) < (self.bulletSize.get() / 2)):
                 hits.append([x,y])
                 x = x - 1
             # look lower right
             x = center[0] + 1
-            while (x < len(self.horizontal)) and (self.getDistance(shot["x"], shot["y"], self.horizontal[x], self.vertical[y]) < (self.bulletSize.get() / 2)):
+            while (x < len(self.horizontal)) and (self.getDistance(horizontalOffset, verticalOffset, self.horizontal[x], self.vertical[y]) < (self.bulletSize.get() / 2)):
                 hits.append([x,y])
                 x = x + 1
             y = y + 1
@@ -328,7 +334,7 @@ class MainWindow(ttk.Frame):
                 break
         verticalOffset = int(shot["y"]) / int(shot["resolution"])
         for y in range(len(self.vertical)):
-            if (self.vertical[y] > verticalOffset):
+            if (self.vertical[y] < verticalOffset):
                 y = y - 1
                 break
         return [x,y]
@@ -337,10 +343,10 @@ class MainWindow(ttk.Frame):
         if isinstance(field[0], list):
             val = []
             for f in field:
-                val.append(self.values[f[0]][f[1]])
+                val.append(self.values[f[1]][f[0]])
             return val
         else:
-            return self.values[field[0]][field[1]]
+            return self.values[field[1]][field[0]]
 
     def showResultWindow(self):
         root = Toplevel(self.root)
@@ -375,33 +381,44 @@ class MainWindow(ttk.Frame):
         resizeFactor = 5
         offset = 3
         width = self.paneWidth.get() * 10 * resizeFactor + offset
-        height= self.paneHeight.get() * 10 * resizeFactor + offset
+        height = self.paneHeight.get() * 10 * resizeFactor + offset
         cellWidth = self.horizontalStep * resizeFactor
         cellHeight = self.verticalStep * resizeFactor
         bulletRadius = self.bulletSize.get() / 2 * resizeFactor
         horizontalOffset = abs(self.horizontal[0])
         verticalOffset = abs(self.vertical[0])
         canvas = Canvas(root, width=width, height=height)
-        canvas.pack()
+        canvas.grid(column=0, row=0)
 
         # draw results if passed
         if result:
+            frame = ttk.Frame(root)
+            frame.grid(column=1, row=0)
+            frame.grid_columnconfigure(0, weight=1)
+            innerOptions = dict(padx=5, pady=2)
+
+            i = 1
             for shot in result["shots"]:
+                shotLabel = ttk.Label(frame, text=str(i) + ": ")
+                shotLabel.grid(column=0, row=i - 1, sticky=E, **innerOptions)
+                resultLabel = ttk.Label(frame, text=str(shot["values"]))
+                resultLabel.grid(column=1, row=i - 1, sticky=W, **innerOptions)
                 x = (int(shot["x"]) / int(shot["resolution"]) + horizontalOffset) * resizeFactor + offset
-                y = (int(shot["y"]) / int(shot["resolution"]) + verticalOffset) * resizeFactor + offset
+                y = height - (int(shot["y"]) / int(shot["resolution"]) + verticalOffset) * resizeFactor
                 canvas.create_oval(x - bulletRadius, y - bulletRadius, x + bulletRadius, y + bulletRadius, fill='gray25')
+                canvas.create_text(x, y, text=str(i), fill='white')
+                i = i + 1
 
         # draw grid and values
-        print(self.values, self.horizontal, self.vertical)
         for line in self.horizontal:
             canvas.create_line((line + horizontalOffset) * resizeFactor + offset, 0, (line + horizontalOffset) * resizeFactor + offset, height)
         for line in self.vertical:
             canvas.create_line(0, (line + verticalOffset) * resizeFactor + offset, width, (line + verticalOffset) * resizeFactor + offset)
-        for column in range(len(self.values)):
-            for row in range(len(self.values[column])):
+        for row in range(len(self.values)):
+            for column in range(len(self.values[row])):
                 x = (self.horizontal[column] + horizontalOffset) * resizeFactor + offset + cellWidth / 2
-                y = (self.vertical[row] + verticalOffset) * resizeFactor + offset + cellHeight / 2
-                canvas.create_text(x, y, text=str(self.values[column][row]))
+                y = (verticalOffset - self.vertical[row]) * resizeFactor + offset + cellHeight / 2
+                canvas.create_text(x, y, text=str(self.values[row][column]))
 
 if __name__ == '__main__':
     MainWindow.main()
