@@ -8,13 +8,19 @@ Vorab bitte folgendes installieren:
 
 - Python 3 (sollte vorinstalliert sein)
 - PIP (sollte vorinstalliert sein)
-- Tkinter (```sudo zypper install python3-tk```s)
+- Tkinter (```sudo zypper install python3-tk```)
 - [wkhtmltopdf](https://wkhtmltopdf.org) (falls installierbar)
 
 und die benötigten Pakete mit PIP installieren
 
 ```bash
 sudo pip install -r requirements.txt
+```
+
+Die erste Zeile in der **gsg.py** anpassen entsprechend dem Ergebnis von:
+
+```bash
+which python3
 ```
 
 ## Nutzung
