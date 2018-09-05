@@ -94,7 +94,8 @@ class MainWindow(ttk.Frame):
         self.loadResultButton = ttk.Button(self.evaluationFrame, text='Datei laden & auswerten', command=self.loadResult)
         self.fileLabel = ttk.Label(self.evaluationFrame, textvariable=self.file)
         self.showEvaluationButton = ttk.Button(self.evaluationFrame, text='Ergebnisse anzeigen', command=self.showEval)
-        self.exportEvaluationButton = ttk.Button(self.evaluationFrame, text='Ergebnisse exportieren', command=self.exportEval)
+        self.exportEvaluationPDFButton = ttk.Button(self.evaluationFrame, text='PDF exportieren', command=self.exportEvalPDF)
+        self.exportEvaluationHTMLButton = ttk.Button(self.evaluationFrame, text='HTML exportieren', command=self.exportEvalHTML)
 
         self.disableEvaluationButtons()
         self.disablePaneButtons()
@@ -126,9 +127,10 @@ class MainWindow(ttk.Frame):
 
         self.evaluationFrame.pack(fill="both", expand="yes", padx=10, pady=10)
         self.loadResultButton.grid(column=0, row=0, sticky=W, **innerOptions)
-        self.fileLabel.grid(column=1, row=0, sticky=E, **innerOptions)
+        self.fileLabel.grid(column=1, row=0, columnspan=2, sticky=E, **innerOptions)
         self.showEvaluationButton.grid(column=0, row=1, sticky=W, **innerOptions)
-        self.exportEvaluationButton.grid(column=1, row=1, sticky=W, **innerOptions)
+        self.exportEvaluationPDFButton.grid(column=1, row=1, sticky=W, **innerOptions)
+        self.exportEvaluationHTMLButton.grid(column=2, row=1, sticky=W, **innerOptions)
 
     def loadPane(self):
         self.enablePaneButtons()
@@ -194,8 +196,14 @@ class MainWindow(ttk.Frame):
     def showEval(self):
         self.showResultWindow()
 
-    def exportEval(self):
+    def exportEvalPDF(self):
         pdfkit.from_string(self.html, str(datetime.date.today()) + ".pdf")
+
+    def exportEvalHTML(self):
+        filename = os.getcwd() + "/" + str(datetime.date.today()) + ".html"
+        f = open(filename, 'w')
+        f.write(self.html)
+        f.close()
 
     def disablePaneButtons(self):
         self.showPaneButton.state(["disabled"])
@@ -205,11 +213,13 @@ class MainWindow(ttk.Frame):
 
     def disableEvaluationButtons(self):
         self.showEvaluationButton.state(["disabled"])
-        self.exportEvaluationButton.state(["disabled"])
+        self.exportEvaluationPDFButton.state(["disabled"])
+        self.exportEvaluationHTMLButton.state(["disabled"])
     
     def enableEvaluationButtons(self):
         self.showEvaluationButton.state(["!disabled"])
-        self.exportEvaluationButton.state(["!disabled"])
+        self.exportEvaluationPDFButton.state(["!disabled"])
+        self.exportEvaluationHTMLButton.state(["!disabled"])
 
     def calculateGrid(self):
         self.horizontal = []
