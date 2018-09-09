@@ -188,7 +188,10 @@ class MainWindow(ttk.Frame):
         self.showPaneWindow()
 
     def loadResult(self):
-        filename = askopenfilename(initialdir = os.getcwd(), parent = self.root, title = "Datei auswählen", filetypes = [("xml","*.xml")])
+        initdir = os.getcwd()
+        if (os.path.exists("/var/shootmaster/ERGEBNIS/XML")):
+            intidir = "/var/shootmaster/ERGEBNIS/XML"
+        filename = askopenfilename(initialdir = initdir, parent = self.root, title = "Datei auswählen", filetypes = [("xml","*.xml")])
         self.file.set(filename)
         self.parseResultFile(filename)
         self.enableEvaluationButtons()
@@ -388,7 +391,7 @@ class MainWindow(ttk.Frame):
         root.grid_columnconfigure(0, weight=1)
         root.grid_rowconfigure(0, weight=1)
         root.resizable(False, False)
-        resizeFactor = 5
+        resizeFactor = 4
         offset = 3
         width = self.paneWidth.get() * 10 * resizeFactor + offset
         height = self.paneHeight.get() * 10 * resizeFactor + offset

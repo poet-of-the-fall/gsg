@@ -27,15 +27,37 @@ which python3
 
 Zuerst müssen die Ergebnisse exportiert werden. Dazu am besten eine eigene Scheibe in der Software von Meyton anlegen und eine Auswertung zu dieser Scheibe erstellen. Die Ergebnisse dieser Scheibe lassen sich dann als XLM exportieren. 
 
-*TODO Beispiel und Bilder einfügen*
+Hier ein paar Bilder zum Einrichten der Meyton Software:
 
-Jetzt kann das Programm über das Terminal geöffnet werden:
+1) Disziplin anlegen, dabei am besten "Trefferwert verdeckt, Treffer sichtbar" und "keine Probescheibe" wählen:
+<img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/1_Disziplin_erstellen.png?raw=true" width="446">
+
+2) Dann oben auf das Icon zum definieren der Wertungscheibe klicken und ca so etwas einstellen:
+<img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/2_Scheibe_definieren.png?raw=true" width="446">
+
+3) Eine Veranstlung bzw. Auswertung Anlegen und wie abgebildet einstellen:
+<img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/3_Auswertung_anlegen.png?raw=true" width="446">
+
+4) Bei der Scheibenauswahl kann folgendes eingestellt werden (dann lässt sich die Glücksscheibe auch in anderen Veranstltungen verwenden):
+<img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/4_Scheiben_filtern.png?raw=true" width="446">
+
+5) Wenn geschossen wurde, können die Ergebnise in der Auswertung als XML exportiert werden. Anschließend meldet das Programm, wohin die Daten gespeichert wurden (evtl. merken, da später die Daten von dort wieder geladen werden müssen):
+<img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/5_Ergebnisse_exportieren.png?raw=true" width="446">
+<img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/6_Pfad_merken.png?raw=true" width="446">
+
+Jetzt kann das Glücksscheiben-Programm über das Terminal geöffnet werden, falls kein Shortcut am Desktop erstellt wurde:
 
 ```bash
 ./gsg.py
 ```
 
 <img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/mainwindow.png?raw=true" width="446">
+
+Das exportierte Ergebnis kann jetzt im Glücksscheibengenerator verwendet werden. Hierzu folgernde Ablauf, der weiter unten noch ausführlicher beschrieben wird:
+
+1) eine Glücksscheibe erzeugen oder laden
+2) exportierte Ergebnisse laden
+3) Auswertung anschauen/exportieren
 
 **Glücksscheibe definieren**
 
