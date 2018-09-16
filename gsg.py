@@ -238,10 +238,12 @@ class MainWindow(ttk.Frame):
         tree = ET.parse(filename)
         root = tree.getroot()
         self.results = []
-        id = 0
         for child in root:
             shooter = {}
-            shooter["id"] = id
+            shooter["targetID"] = child.attrib["TargetID"]
+            shooter["gender"] = child.find("Shooter").find("Gender").text
+            shooter["class"] = child.find("MatchClass").find("Name").text
+            shooter["club"] = child.find("Club").find("Name").text
             shooter["lastname"] = child.find("Shooter").find("FamilyName").text
             shooter["firstname"] = child.find("Shooter").find("GivenName").text
             shooter["shots"] = []
@@ -252,7 +254,6 @@ class MainWindow(ttk.Frame):
                 shot["y"] = aiming.find("Coordinate").find("CCoordinate").find("Y").text
                 shooter["shots"].append(shot)
             self.results.append(shooter)
-            id = id + 1
         self.evaluateResult()
 
     def evaluateResult(self):
