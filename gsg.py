@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -23,9 +23,6 @@ class MainWindow(ttk.Frame):
         root = Tk()
         root.title("Glücksscheibengenerator")
         app = cls(root)
-        app.grid(sticky=NSEW)
-        root.grid_columnconfigure(0, weight=1)
-        root.grid_rowconfigure(0, weight=1)
         root.resizable(True, True)
         root.mainloop()
 
@@ -47,53 +44,87 @@ class MainWindow(ttk.Frame):
         self.valuesSteps = IntVar(self, 5)
         self.ScoringOptions = [('Kleinsten Wert', 'min'), ('Größten Wert', 'max'), ('Meiste Abdeckung', 'cov'), ('Summe aller Werte', 'sum')]
         self.Scoring = StringVar(self, self.ScoringOptions[-1][1])
+        self.TeamScoringOptions = [('Beste Ergebnisse', 'best'), ('Schlechteste Ergebnisse', 'worst'), ('Durchschnitt', 'average'), ('Alle', 'all')]
+        self.TeamScoring = StringVar(self, self.TeamScoringOptions[0][1])
+        self.SeparateGender = IntVar(self, 0)
+        self.SeparateAgeClass = IntVar(self, 0)
         self.file = StringVar(self, '')
+        self.shooterCount = StringVar(self, '')
+        self.currentTab = 0
 
     def create_widgets(self):
-        self.generationFrame = ttk.Labelframe(self, text='Glücksscheibe definieren')
-        self.generationFrame.grid_columnconfigure(0, weight=1)
-        self.generationFrame.grid_columnconfigure(2, weight=1)
-        self.generationFrame.grid_columnconfigure(4, weight=1)
-        self.paneWidthLabel = ttk.Label(self.generationFrame, text='Breite der Scheibe (cm):')
-        self.paneWidthEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.paneWidth)
-        self.paneHeightLabel = ttk.Label(self.generationFrame, text='Höhe der Scheibe (cm):')
-        self.paneHeightEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.paneHeight)
-        self.bulletSizeLabel = ttk.Label(self.generationFrame, text='Kugeldurchmesser (mm)')
-        self.bulletSizeEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.bulletSize)
-        self.gridColumnsLabel = ttk.Label(self.generationFrame, text='Anzahl Spalten:')
-        self.gridColumnsEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.gridColumns)
-        self.gridRowsLabel = ttk.Label(self.generationFrame, text='Anzahl Zeilen:')
-        self.gridRowsEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.gridRows)
-        self.valuesMinLabel = ttk.Label(self.generationFrame, text='Kleinster Wert:')
-        self.valuesMinEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.valuesMin)
-        self.valuesMaxLabel = ttk.Label(self.generationFrame, text='Größter Wert:')
-        self.valuesMaxEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.valuesMax)
-        self.valuesStepsLabel = ttk.Label(self.generationFrame, text='Schrittgröße:')
-        self.valuesStepsEntry = ttk.Entry(self.generationFrame, width=4, textvariable=self.valuesSteps)
-        self.scoringLabel = ttk.Label(self.generationFrame, text='Falls Treffer mehrere Felder berührt, werte:')
-        self.scoringFrame = ttk.Frame(self.generationFrame)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.bind("<<NotebookTabChanged>>", self.notebookTabChangedEvent)
+        self.back = ttk.Button(self.root, text='Zurück', command=self.back)
+        self.next = ttk.Button(self.root, text='Weiter', command=self.next)
+
+        # First Tab
+        self.tabDefine = ttk.Frame(self.notebook)
+        self.tabDefine.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.notebook.add(self.tabDefine, text = "Glücksscheibe definieren")
+        self.tabDefine.grid_columnconfigure(0, weight=1)
+        self.tabDefine.grid_columnconfigure(2, weight=1)
+        self.tabDefine.grid_columnconfigure(4, weight=1)
+        self.paneWidthLabel = ttk.Label(self.tabDefine, text='Breite der Scheibe (cm):')
+        self.paneWidthEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.paneWidth)
+        self.paneHeightLabel = ttk.Label(self.tabDefine, text='Höhe der Scheibe (cm):')
+        self.paneHeightEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.paneHeight)
+        self.bulletSizeLabel = ttk.Label(self.tabDefine, text='Kugeldurchmesser (mm)')
+        self.bulletSizeEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.bulletSize)
+        self.gridColumnsLabel = ttk.Label(self.tabDefine, text='Anzahl Spalten:')
+        self.gridColumnsEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.gridColumns)
+        self.gridRowsLabel = ttk.Label(self.tabDefine, text='Anzahl Zeilen:')
+        self.gridRowsEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.gridRows)
+        self.valuesMinLabel = ttk.Label(self.tabDefine, text='Kleinster Wert:')
+        self.valuesMinEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.valuesMin)
+        self.valuesMaxLabel = ttk.Label(self.tabDefine, text='Größter Wert:')
+        self.valuesMaxEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.valuesMax)
+        self.valuesStepsLabel = ttk.Label(self.tabDefine, text='Schrittgröße:')
+        self.valuesStepsEntry = ttk.Entry(self.tabDefine, width=4, textvariable=self.valuesSteps)
+        self.defineSeparator = ttk.Separator(self.tabDefine, orient='horizontal')
+        self.loadPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe laden', command=self.loadPane)
+        self.createPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe erzeugen', command=self.createPane)
+        self.showPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe anzeigen', command=self.showPane)
+
+        # Second Tab
+        self.tabLoad = ttk.Frame(self.notebook)
+        self.tabLoad.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.notebook.add(self.tabLoad, text = "Ergebnisse laden")
+        self.loadResultButton = ttk.Button(self.tabLoad, text='Datei laden', command=self.loadResult)
+        self.fileLabel = ttk.Label(self.tabLoad, textvariable=self.file)
+        self.loadSeparator = ttk.Separator(self.tabLoad, orient='horizontal')
+        self.showShooter = ttk.Button(self.tabLoad, text='Schützen anzeigen', command=self.showShooterWindow)
+        self.shooterCountLable = ttk.Label(self.tabLoad, textvariable=self.shooterCount)
+
+        # Third Tab
+        self.tabTeams = ttk.Frame(self.notebook)
+        self.tabTeams.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.notebook.add(self.tabTeams, text = "Teams")
+
+
+        # Fourth Tab
+        self.tabEvaluate = ttk.Frame(self.notebook)
+        self.tabEvaluate.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.notebook.add(self.tabEvaluate, text = "Auswertung")
+        self.scoringFrame = ttk.Labelframe(self.tabEvaluate, text='Falls Treffer mehrere Felder berührt, werte:')
         for text, mode in self.ScoringOptions:
-            b = ttk.Radiobutton(self.scoringFrame, text=text, variable=self.Scoring, value=mode)
+            b = ttk.Radiobutton(self.scoringFrame, text=text, variable=self.Scoring, value=mode, command=self.evaluateResult)
             b.pack(side=LEFT, ipadx=10)
-        self.loadPaneButton = ttk.Button(self.generationFrame, text='vorhandene Glücksscheibe laden', command=self.loadPane)
-        self.createPaneButton = ttk.Button(self.generationFrame, text='Glücksscheibe erzeugen & speichern', command=self.createPane)
-        self.showPaneButton = ttk.Button(self.generationFrame, text='Glücksscheibe anzeigen', command=self.showPane)
-
-        self.evaluationFrame = ttk.Labelframe(self, text='Schießergebnisse Auswerten', width=1000)
-        self.evaluationFrame.grid_columnconfigure(0, weight=1)
-        self.evaluationFrame.grid_columnconfigure(1, weight=1)
-        self.loadResultButton = ttk.Button(self.evaluationFrame, text='Datei laden & auswerten', command=self.loadResult)
-        self.fileLabel = ttk.Label(self.evaluationFrame, textvariable=self.file)
-        self.showEvaluationButton = ttk.Button(self.evaluationFrame, text='Ergebnisse anzeigen', command=self.showEval)
-        self.exportEvaluationPDFButton = ttk.Button(self.evaluationFrame, text='PDF exportieren', command=self.exportEvalPDF)
-        self.exportEvaluationHTMLButton = ttk.Button(self.evaluationFrame, text='HTML exportieren', command=self.exportEvalHTML)
-
-        self.disableEvaluationButtons()
-        self.disablePaneButtons()
+        self.teamScoringFrame = ttk.Labelframe(self.tabEvaluate, text='Falls Anzahl Schieben unterschiedlich, werte:')
+        for text, mode in self.TeamScoringOptions:
+            b = ttk.Radiobutton(self.teamScoringFrame, text=text, variable=self.TeamScoring, value=mode, command=self.evaluateResult)
+            b.pack(side=LEFT, ipadx=10)
+        self.separateGenderToggle = Checkbutton(self.tabEvaluate, text='Geschlechter getrennt auswerten', variable=self.SeparateGender, command=self.evaluateResult)
+        self.separateAgeClassToggle = Checkbutton(self.tabEvaluate, text='Altersklassen getrennt auswerten', variable=self.SeparateAgeClass, command=self.evaluateResult)
+        self.evaluateSeparator = ttk.Separator(self.tabEvaluate, orient='horizontal')
+        self.showEvaluationButton = ttk.Button(self.tabEvaluate, text='Ergebnisse anzeigen', command=self.showEval)
+        self.exportEvaluationPDFButton = ttk.Button(self.tabEvaluate, text='PDF exportieren', command=self.exportEvalPDF)
+        self.exportEvaluationHTMLButton = ttk.Button(self.tabEvaluate, text='HTML exportieren', command=self.exportEvalHTML)
 
     def grid_widgets(self):
         innerOptions = dict(padx=5, pady=2)
-        self.generationFrame.pack(fill="both", expand="yes", padx=10, pady=10)
+
+        # First Tab
         self.paneWidthLabel.grid(column=0, row=0, sticky=E, **innerOptions)
         self.paneWidthEntry.grid(column=1, row=0, sticky=W, **innerOptions)
         self.paneHeightLabel.grid(column=2, row=0, sticky=E, **innerOptions)
@@ -110,21 +141,59 @@ class MainWindow(ttk.Frame):
         self.valuesMaxEntry.grid(column=3, row=2, sticky=W, **innerOptions)
         self.valuesStepsLabel.grid(column=4, row=2, sticky=E, **innerOptions)
         self.valuesStepsEntry.grid(column=5, row=2, sticky=W, **innerOptions)
-        self.scoringLabel.grid(column=0, row=3, columnspan=6, sticky=W, **innerOptions)
-        self.scoringFrame.grid(column=0, row=4, columnspan=6, sticky=W, **innerOptions)
-        self.loadPaneButton.grid(column=0, row=5, columnspan=2, sticky=W, **innerOptions)
-        self.createPaneButton.grid(column=2, row=5, columnspan=2, sticky=W, **innerOptions)
-        self.showPaneButton.grid(column=4, row=5, columnspan=2, sticky=W, **innerOptions)
+        self.defineSeparator.grid(column=0, columnspan=6, row=3, **innerOptions)
+        self.loadPaneButton.grid(column=0, row=4, columnspan=2, **innerOptions)
+        self.createPaneButton.grid(column=2, row=4, columnspan=2, **innerOptions)
+        self.showPaneButton.grid(column=4, row=4, columnspan=2, **innerOptions)
 
-        self.evaluationFrame.pack(fill="both", expand="yes", padx=10, pady=10)
+        # Second Tab
         self.loadResultButton.grid(column=0, row=0, sticky=W, **innerOptions)
-        self.fileLabel.grid(column=1, row=0, columnspan=2, sticky=E, **innerOptions)
-        self.showEvaluationButton.grid(column=0, row=1, sticky=W, **innerOptions)
-        self.exportEvaluationPDFButton.grid(column=1, row=1, sticky=W, **innerOptions)
-        self.exportEvaluationHTMLButton.grid(column=2, row=1, sticky=W, **innerOptions)
+        self.fileLabel.grid(column=1, row=0, sticky=E, **innerOptions)
+        self.loadSeparator.grid(column=0, columnspan=2, row=1, **innerOptions)
+        self.showShooter.grid(column=0, row=2, stick=W, **innerOptions)
+        self.shooterCountLable.grid(column=1, row=2, sticky=E, **innerOptions)
+
+        # Third Tab
+
+        # Fourth Tab
+        self.scoringFrame.grid(column=0, row=0, columnspan=3, sticky=W, **innerOptions)
+        self.teamScoringFrame.grid(column=0, row=1, columnspan=3, sticky=W, **innerOptions)
+        self.evaluateSeparator.grid(column=0, columnspan=3, row=2, **innerOptions)
+        self.separateGenderToggle.grid(column=0, columnspan=3, row=3, sticky=W, **innerOptions)
+        self.separateAgeClassToggle.grid(column=0, columnspan=3, row=4, sticky=W, **innerOptions)
+        self.showEvaluationButton.grid(column=0, row=5, **innerOptions)
+        self.exportEvaluationPDFButton.grid(column=1, row=5, **innerOptions)
+        self.exportEvaluationHTMLButton.grid(column=2, row=5, **innerOptions)
+
+        # Pack all
+        self.notebook.pack(fill="both", expand="yes")
+        self.back.pack(side=LEFT, padx=20, pady=5)
+        self.next.pack(side=RIGHT, padx=20, pady=5)
+        self.disableShowShooter()
+
+    def disableShowShooter(self):
+        self.showShooter.state(["disabled"])
+
+    def enableShowShooter(self):
+        self.showShooter.state(["!disabled"])
+
+    def notebookTabChangedEvent(self, event):
+        self.currentTab = event.widget.index("current")
+        self.next.state(["!disabled"])
+        self.back.state(["!disabled"])
+        if (self.currentTab == 0):
+            self.back.state(["disabled"])
+        if (self.currentTab == 3):
+            self.next.state(["disabled"])
+        self.root.update()
+
+    def next(self):
+        self.notebook.select(self.currentTab + 1)
+
+    def back(self):
+        self.notebook.select(self.currentTab - 1)
 
     def loadPane(self):
-        self.enablePaneButtons()
         config = configparser.ConfigParser()
         filename = askopenfilename(initialdir = os.getcwd(), parent = self.root, title = "Datei auswählen", filetypes = [("ini","*.ini")])
         config.read(filename)
@@ -152,7 +221,6 @@ class MainWindow(ttk.Frame):
                 val.append(random.randrange(self.valuesMin.get(), self.valuesMax.get(), self.valuesSteps.get()))
             self.values.append(val)
         self.calculateGrid()
-        self.enablePaneButtons()
         filename = os.getcwd() + "/" + str(datetime.datetime.now()).replace(":", "-").replace(" ", "-") + ".ini"
         cfgfile = open(filename, 'w')
         config = configparser.ConfigParser()
@@ -183,9 +251,10 @@ class MainWindow(ttk.Frame):
         if (os.path.exists("/var/shootmaster/ERGEBNIS/XML")):
             intidir = "/var/shootmaster/ERGEBNIS/XML"
         filename = askopenfilename(initialdir = initdir, parent = self.root, title = "Datei auswählen", filetypes = [("xml","*.xml")])
-        self.file.set(filename)
-        self.parseResultFile(filename)
-        self.enableEvaluationButtons()
+        if (filename):
+            self.file.set(filename)
+            self.parseResultFile(filename)
+            self.enableShowShooter()
 
     def showEval(self):
         self.showResultWindow()
@@ -198,22 +267,6 @@ class MainWindow(ttk.Frame):
         f = open(filename, 'w')
         f.write(self.html)
         f.close()
-
-    def disablePaneButtons(self):
-        self.showPaneButton.state(["disabled"])
-    
-    def enablePaneButtons(self):
-        self.showPaneButton.state(["!disabled"])
-
-    def disableEvaluationButtons(self):
-        self.showEvaluationButton.state(["disabled"])
-        self.exportEvaluationPDFButton.state(["disabled"])
-        self.exportEvaluationHTMLButton.state(["disabled"])
-    
-    def enableEvaluationButtons(self):
-        self.showEvaluationButton.state(["!disabled"])
-        self.exportEvaluationPDFButton.state(["!disabled"])
-        self.exportEvaluationHTMLButton.state(["!disabled"])
 
     def calculateGrid(self):
         self.horizontal = []
@@ -426,6 +479,9 @@ class MainWindow(ttk.Frame):
                 x = (self.horizontal[column] + horizontalOffset) * resizeFactor + offset + cellWidth / 2
                 y = (verticalOffset - self.vertical[row]) * resizeFactor + offset + cellHeight / 2
                 canvas.create_text(x, y, text=str(self.values[row][column]))
+
+    def showShooterWindow():
+        print("shooter")
 
 if __name__ == '__main__':
     MainWindow.main()
