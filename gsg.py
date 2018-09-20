@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -10,19 +10,10 @@ import math
 import configparser
 import pdfkit
 from tkinterhtml import HtmlFrame
-# import tkinter for python2 or python3
-try:
-    # Python2
-    from Tkinter import *
-    import ttk as ttk
-    from tkFileDialog import askopenfilename, asksaveasfile, asksaveasfilename
-    from tkMessageBox import showwarning
-except ImportError:
-    # Python3
-    from tkinter import *
-    from tkinter import ttk
-    from tkinter.filedialog import askopenfilename, asksaveasfile, asksaveasfilename
-    from tkinter.messagebox import showwarning
+from tkinter import *
+from tkinter import ttk
+from tkinter.filedialog import askopenfilename, asksaveasfile, asksaveasfilename
+from tkinter.messagebox import showwarning
 
 class MainWindow(ttk.Frame):
 
@@ -249,9 +240,11 @@ class MainWindow(ttk.Frame):
             shooter["shots"] = []
             for aiming in child.find("Aimings").find("AimingData").iter("Shot"):
                 shot = {}
+                shot["timestamp"] = aiming.find("TimeStamp").find("DateTime").text
                 shot["resolution"] = aiming.find("Coordinate").find("CCoordinate").attrib["Resolution"]
                 shot["x"] = aiming.find("Coordinate").find("CCoordinate").find("X").text
                 shot["y"] = aiming.find("Coordinate").find("CCoordinate").find("Y").text
+                shot["factor"] = self.getDistance(0,0,shot["x"],shot["y"])
                 shooter["shots"].append(shot)
             self.results.append(shooter)
         self.evaluateResult()
