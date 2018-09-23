@@ -11,9 +11,7 @@ import configparser
 import pdfkit
 from tkinterhtml import HtmlFrame
 from tkinter import *
-from tkinter import ttk
 from tkinter.filedialog import askopenfilename, asksaveasfile, asksaveasfilename
-from tkinter.messagebox import showwarning
 
 class MainWindow(ttk.Frame):
 
@@ -46,9 +44,12 @@ class MainWindow(ttk.Frame):
         self.Scoring = StringVar(self, self.ScoringOptions[-1][1])
         self.TeamScoringOptions = [('Beste Ergebnisse', 'best'), ('Schlechteste Ergebnisse', 'worst'), ('Durchschnitt', 'average'), ('Alle', 'all')]
         self.TeamScoring = StringVar(self, self.TeamScoringOptions[0][1])
+        self.TeamOptions = [('keine Teams', 'none'), ('Teams auf Personenebene', 'person'), ('Teams auf Scheibenebene', 'pane'), ('Teams aus Vereinen', 'club')]
+        self.Team = StringVar(self, self.TeamOptions[0][1])
         self.SeparateGender = IntVar(self, 0)
         self.SeparateAgeClass = IntVar(self, 0)
-        self.file = StringVar(self, '')
+        self.resultFile = StringVar(self, '')
+        self.configFile = StringVar(self, '')
         self.shooterCount = StringVar(self, '')
         self.currentTab = 0
 
@@ -85,22 +86,23 @@ class MainWindow(ttk.Frame):
         self.loadPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe laden', command=self.loadPane)
         self.createPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe erzeugen', command=self.createPane)
         self.showPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe anzeigen', command=self.showPane)
+        self.configFileLabel = ttk.Label(self.tabDefine, textvariable=self.configFile)
 
         # Second Tab
         self.tabLoad = ttk.Frame(self.notebook)
         self.tabLoad.grid(column=0, row=0, sticky=(N, W, E, S))
         self.notebook.add(self.tabLoad, text = "Ergebnisse laden")
         self.loadResultButton = ttk.Button(self.tabLoad, text='Datei laden', command=self.loadResult)
-        self.fileLabel = ttk.Label(self.tabLoad, textvariable=self.file)
+        self.resultFileLabel = ttk.Label(self.tabLoad, textvariable=self.resultFile)
         self.loadSeparator = ttk.Separator(self.tabLoad, orient='horizontal')
         self.showShooter = ttk.Button(self.tabLoad, text='Schützen anzeigen', command=self.showShooterWindow)
-        self.shooterCountLable = ttk.Label(self.tabLoad, textvariable=self.shooterCount)
+        self.shooterCountLabel = ttk.Label(self.tabLoad, textvariable=self.shooterCount)
 
         # Third Tab
         self.tabTeams = ttk.Frame(self.notebook)
         self.tabTeams.grid(column=0, row=0, sticky=(N, W, E, S))
         self.notebook.add(self.tabTeams, text = "Teams")
-
+        self.showTeamDefinitionButton = ttk.Button(self.tabTeams, text='Teams festlegen' ,command=self.showTeamDefinition)
 
         # Fourth Tab
         self.tabEvaluate = ttk.Frame(self.notebook)
@@ -145,15 +147,22 @@ class MainWindow(ttk.Frame):
         self.loadPaneButton.grid(column=0, row=4, columnspan=2, **innerOptions)
         self.createPaneButton.grid(column=2, row=4, columnspan=2, **innerOptions)
         self.showPaneButton.grid(column=4, row=4, columnspan=2, **innerOptions)
+        self.configFileLabel.grid(column=0, row=5, columnspan=6, **innerOptions)
 
         # Second Tab
         self.loadResultButton.grid(column=0, row=0, sticky=W, **innerOptions)
-        self.fileLabel.grid(column=1, row=0, sticky=E, **innerOptions)
+        self.resultFileLabel.grid(column=1, row=0, sticky=E, **innerOptions)
         self.loadSeparator.grid(column=0, columnspan=2, row=1, **innerOptions)
         self.showShooter.grid(column=0, row=2, stick=W, **innerOptions)
-        self.shooterCountLable.grid(column=1, row=2, sticky=E, **innerOptions)
+        self.shooterCountLabel.grid(column=1, row=2, sticky=E, **innerOptions)
 
         # Third Tab
+        i = 0
+        for text, mode in self.TeamOptions:
+            b = ttk.Radiobutton(self.tabTeams, text=text, variable=self.Team, value=mode)
+            b.grid(column=0, row=i, sticky=W, **innerOptions)
+            i = i + 1
+        self.showTeamDefinitionButton.grid(column=1, row=1, rowspan=2, sticky=NS, **innerOptions)
 
         # Fourth Tab
         self.scoringFrame.grid(column=0, row=0, columnspan=3, sticky=W, **innerOptions)
@@ -184,6 +193,7 @@ class MainWindow(ttk.Frame):
         if (self.currentTab == 0):
             self.back.state(["disabled"])
         if (self.currentTab == 3):
+            self.evaluateResult()
             self.next.state(["disabled"])
         self.root.update()
 
@@ -196,6 +206,7 @@ class MainWindow(ttk.Frame):
     def loadPane(self):
         config = configparser.ConfigParser()
         filename = askopenfilename(initialdir = os.getcwd(), parent = self.root, title = "Datei auswählen", filetypes = [("ini","*.ini")])
+        self.configFile.set(filename)
         config.read(filename)
         self.paneWidth.set(float(config['Settings']['paneWidth']))
         self.paneHeight.set(float(config['Settings']['paneHeight']))
@@ -205,7 +216,6 @@ class MainWindow(ttk.Frame):
         self.valuesMin.set(int(config['Settings']['valuesMin']))
         self.valuesMax.set(int(config['Settings']['valuesMax']))
         self.valuesSteps.set(int(config['Settings']['valuesSteps']))
-        self.Scoring.set(config['Settings']['Scoring'])
         values = config['Pane']['values']
         values = values.split("/")
         for i in range(len(values)):
@@ -221,7 +231,13 @@ class MainWindow(ttk.Frame):
                 val.append(random.randrange(self.valuesMin.get(), self.valuesMax.get(), self.valuesSteps.get()))
             self.values.append(val)
         self.calculateGrid()
-        filename = os.getcwd() + "/" + str(datetime.datetime.now()).replace(":", "-").replace(" ", "-") + ".ini"
+        self.savePane()
+
+    def savePane(self):
+        filename = self.configFile.get()
+        if (len(filename) == 0):
+            filename = os.getcwd() + "/" + str(datetime.datetime.now()).replace(":", "-").replace(" ", "-") + ".ini"
+            self.configFile.set(filename)
         cfgfile = open(filename, 'w')
         config = configparser.ConfigParser()
         config.add_section('Settings')
@@ -233,7 +249,6 @@ class MainWindow(ttk.Frame):
         config.set('Settings', 'valuesMin', str(self.valuesMin.get()))
         config.set('Settings', 'valuesMax', str(self.valuesMax.get()))
         config.set('Settings', 'valuesSteps', str(self.valuesSteps.get()))
-        config.set('Settings', 'Scoring', self.Scoring.get())
         config.add_section('Pane')
         values = ''
         for element in self.values:
@@ -252,7 +267,7 @@ class MainWindow(ttk.Frame):
             intidir = "/var/shootmaster/ERGEBNIS/XML"
         filename = askopenfilename(initialdir = initdir, parent = self.root, title = "Datei auswählen", filetypes = [("xml","*.xml")])
         if (filename):
-            self.file.set(filename)
+            self.resultFile.set(filename)
             self.parseResultFile(filename)
             self.enableShowShooter()
 
@@ -282,6 +297,7 @@ class MainWindow(ttk.Frame):
         tree = ET.parse(filename)
         root = tree.getroot()
         self.results = []
+        self.shooterList = set()
         for child in root:
             shooter = {}
             shooter["targetID"] = child.attrib["TargetID"]
@@ -290,6 +306,9 @@ class MainWindow(ttk.Frame):
             shooter["club"] = child.find("Club").find("Name").text
             shooter["lastname"] = child.find("Shooter").find("FamilyName").text
             shooter["firstname"] = child.find("Shooter").find("GivenName").text
+            name = shooter["firstname"] + " " + shooter["lastname"] + ", " + shooter["club"]
+            if (name not in self.shooterList):
+                self.shooterList.add(name)
             shooter["shots"] = []
             for aiming in child.find("Aimings").find("AimingData").iter("Shot"):
                 shot = {}
@@ -300,7 +319,7 @@ class MainWindow(ttk.Frame):
                 shot["factor"] = self.getDistance(0,0,shot["x"],shot["y"])
                 shooter["shots"].append(shot)
             self.results.append(shooter)
-        self.evaluateResult()
+        self.shooterCount.set(str(len(self.results)) + " Scheiben von " + str(len(self.shooterList)) + " Schützen")
 
     def evaluateResult(self):
         scoring = self.Scoring.get()
@@ -429,7 +448,7 @@ class MainWindow(ttk.Frame):
             showResultPane.grid(column=2, row=row, sticky=E, **innerOptions)
             row = row + 1
         
-    def showPaneWindow(self, result=None):
+    def showPaneWindow(self, result=None, resultList=None):
         root = Toplevel(self.root)
         if (result):
             root.title("Ergebnis von " + result["firstname"] + " " + result["lastname"])
@@ -442,27 +461,53 @@ class MainWindow(ttk.Frame):
         offset = 3
         width = self.paneWidth.get() * 10 * resizeFactor + offset
         height = self.paneHeight.get() * 10 * resizeFactor + offset
+        canvas = Canvas(root, width=width, height=height)
+        canvas.grid(column=0, row=0)
+
+        if result == None:
+            canvas.bind('<Double-Button-1>', lambda event: self.canvasDoubleClick(event, root, canvas))
+
+        # draw result list to select pane
+        if (resultList):
+            listbox = Listbox(root)
+            listbox.grid(column=1, row=0)
+            listbox.bind("<<ListboxSelect>>", lambda event: self.paneSelectionChanged(event, root, canvas, resultList))
+            i = 0
+            for resultItem in resultList:
+                listbox.insert(int(i), resultList[i]["targetID"])
+                if (result == resultList[i]):
+                    listbox.selection_set(i)
+                i = i + 1
+
+        self.drawPaneGrid(root, canvas, result, resultList)
+
+    def drawPaneGrid(self, root, canvas, result=None, resultList=None):
+        canvas.delete("all")
+        resizeFactor = 4
+        offset = 3
+        width = self.paneWidth.get() * 10 * resizeFactor + offset
+        height = self.paneHeight.get() * 10 * resizeFactor + offset
         cellWidth = self.horizontalStep * resizeFactor
         cellHeight = self.verticalStep * resizeFactor
         bulletRadius = self.bulletSize.get() / 2 * resizeFactor
         horizontalOffset = abs(self.horizontal[0])
         verticalOffset = abs(self.vertical[0])
-        canvas = Canvas(root, width=width, height=height)
-        canvas.grid(column=0, row=0)
 
         # draw results if passed
         if result:
-            frame = ttk.Frame(root)
-            frame.grid(column=1, row=0)
-            frame.grid_columnconfigure(0, weight=1)
             innerOptions = dict(padx=5, pady=2)
+            if (resultList == None):
+                frame = ttk.Frame(root)
+                frame.grid(column=1, row=0)
+                frame.grid_columnconfigure(0, weight=1)
 
             i = 1
             for shot in result["shots"]:
-                shotLabel = ttk.Label(frame, text=str(i) + ": ")
-                shotLabel.grid(column=0, row=i - 1, sticky=E, **innerOptions)
-                resultLabel = ttk.Label(frame, text=str(shot["values"]))
-                resultLabel.grid(column=1, row=i - 1, sticky=W, **innerOptions)
+                if (resultList == None):
+                    shotLabel = ttk.Label(frame, text=str(i) + ": ")
+                    shotLabel.grid(column=0, row=i - 1, sticky=E, **innerOptions)
+                    resultLabel = ttk.Label(frame, text=str(shot["values"]))
+                    resultLabel.grid(column=1, row=i - 1, sticky=W, **innerOptions)
                 x = (int(shot["x"]) / int(shot["resolution"]) + horizontalOffset) * resizeFactor + offset
                 y = height - (int(shot["y"]) / int(shot["resolution"]) + verticalOffset) * resizeFactor
                 canvas.create_oval(x - bulletRadius, y - bulletRadius, x + bulletRadius, y + bulletRadius, fill='gray25')
@@ -480,8 +525,73 @@ class MainWindow(ttk.Frame):
                 y = (verticalOffset - self.vertical[row]) * resizeFactor + offset + cellHeight / 2
                 canvas.create_text(x, y, text=str(self.values[row][column]))
 
-    def showShooterWindow():
-        print("shooter")
+    def paneSelectionChanged(self, event, root, canvas, resultList):
+        result = resultList[event.widget.curselection()[0]]
+        self.drawPaneGrid(root, canvas, result, resultList)
+    
+    def canvasDoubleClick(self, event, root, canvas):
+        row = int(int(event.y) / (int(event.widget['height']) / int(self.gridRows.get())))
+        col = int(int(event.x) / (int(event.widget['width']) / int(self.gridColumns.get())))
+        self.showInputWindow(row, col, root, canvas)
+
+    def showInputWindow(self, row, col, parentRoot, canvas):
+        root = Toplevel(self.root)
+        root.title('Feld [' + str(row) + ", " + str(col) + "] anpassen")
+        root.grid_columnconfigure(0, weight=1)
+        root.grid_rowconfigure(0, weight=1)
+        root.resizable(False, False)
+        inputValue = IntVar(self, self.values[row][col])
+        inputField = Entry(root, textvariable=inputValue)
+        inputField.grid(column=0, row=0, columnspan=2, sticky=EW)
+        inputField.focus_set()
+        inputField.select_range(0, 'end')
+        inputField.icursor('end')
+        inputField.bind("<Return>", lambda event: self.changeValue(root, row, col, inputValue, parentRoot, canvas))
+        cancelButton = ttk.Button(root, text='Abbrechen', command= lambda: self.closeInputWindow(root))
+        cancelButton.grid(column=0, row=1)
+        okButton = ttk.Button(root, text='Übernehmen', command= lambda: self.changeValue(root, row, col, inputValue, parentRoot, canvas))
+        okButton.grid(column=1, row=1)
+    
+    def closeInputWindow(self, root):
+        root.destroy()
+
+    def changeValue(self, root, row, col, value, parentRoot, canvas):
+        try:
+            val = value.get()
+            self.values[row][col] = val
+            self.savePane()
+            self.drawPaneGrid(parentRoot, canvas)
+            self.closeInputWindow(root)
+        except:
+            print("not a number")
+
+    def showShooterWindow(self):
+        root = Toplevel(self.root)
+        root.title('Schützen')
+        root.grid_columnconfigure(0, weight=1)
+        root.grid_rowconfigure(0, weight=1)
+        root.resizable(True, True)
+        innerOptions = dict(padx=5, pady=2)
+        frame = ttk.Frame(root)
+        frame.pack()
+        frame.grid_columnconfigure(0, weight=1)
+        row = 0
+
+        for shooter in self.shooterList:
+            resultList = []
+            for result in self.results:
+                if (result["firstname"] + " " + result["lastname"] + ", " + result["club"] == shooter):
+                    resultList.append(result)
+            nameLabel = ttk.Label(frame, text=shooter)
+            nameLabel.grid(column=0, row=row, sticky=W, **innerOptions)
+            paneCount = ttk.Label(frame, text=str(len(resultList)) + " Scheiben")
+            paneCount.grid(column=1, row=row, sticky=E, **innerOptions)
+            showResultPane = ttk.Button(frame, text="Ergebnisse anzeigen", command=lambda resultList=resultList: self.showPaneWindow(resultList[0], resultList))
+            showResultPane.grid(column=2, row=row, sticky=E, **innerOptions)
+            row = row + 1
+
+    def showTeamDefinition(self):
+        print("teams")
 
 if __name__ == '__main__':
     MainWindow.main()
