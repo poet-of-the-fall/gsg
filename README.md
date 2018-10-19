@@ -74,6 +74,8 @@ Alte Glücksscheiben können jeder Zeit durch einen Klick auf **vorhandene Glüc
 
 Mit **Glücksscheibe anzeigen** kann die aktuell geladene Glücksscheibe angezeigt werden. Es öffnet sich ein Fenster, dass dei Felder und deren Werte anzeigt.
 
+<img src="https://github.com/poet-of-the-fall/gsg/blob/master/pictures/pane.png?raw=true" width="446">
+
 **Schießergebnisse auswerten**
 
 Zuerst muss die exportierte Datei mit den Ergebnissen geladen werden. Dazu auf **Datei laden & auswerten** klicken und die exportierte Datei angeben.
