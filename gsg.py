@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -272,7 +272,7 @@ class MainWindow(ttk.Frame):
         # sort results in descending order of result
         self.results.sort(key=lambda x: x["result"], reverse=True)
         # create html output of result
-        self.html = "<html><body><h1>Ergebnisse der Gl&uuml;cksscheibe</h1><h4>Datum: " + str(datetime.date.today()) + "</h4><table><tr><th>Name:</th><th>Punkte:</th></tr>"
+        self.html = "<html><head><meta charset='utf-8'></head><body><h1>Ergebnisse der Gl&uuml;cksscheibe</h1><h4>Datum: " + str(datetime.date.today()) + "</h4><table><tr><th>Name:</th><th>Punkte:</th></tr>"
         for shooter in self.results:
             self.html = self.html + "<tr><td>" + shooter["firstname"] + " " + shooter["lastname"] + "</td><td>" + str(shooter["result"]) + "</td></tr>"
         self.html = self.html + "</table></body></html>"
