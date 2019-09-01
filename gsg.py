@@ -44,7 +44,7 @@ class MainWindow(ttk.Frame):
         self.Scoring = StringVar(self, self.ScoringOptions[-1][1])
         self.TeamScoringOptions = [('Beste Ergebnisse', 'best'), ('Schlechteste Ergebnisse', 'worst'), ('Durchschnitt', 'average'), ('Alle', 'all')]
         self.TeamScoring = StringVar(self, self.TeamScoringOptions[0][1])
-        self.TeamOptions = [('keine Teams', 'none'), ('Teams auf Personenebene', 'person'), ('Teams auf Scheibenebene', 'pane'), ('Teams aus Vereinen', 'club')]
+        self.TeamOptions = [('keine Teams', 'none'), ('Teams aus Vereinen', 'club'), ('Teams auf Personenebene', 'person'), ('Teams auf Scheibenebene', 'pane')]
         self.Team = StringVar(self, self.TeamOptions[0][1])
         self.SeparateGender = IntVar(self, 0)
         self.SeparateAgeClass = IntVar(self, 0)
@@ -85,13 +85,13 @@ class MainWindow(ttk.Frame):
         self.defineSeparator = ttk.Separator(self.tabDefine, orient='horizontal')
         self.loadPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe laden', command=self.loadPane)
         self.createPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe erzeugen', command=self.createPane)
-        self.showPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe anzeigen', command=self.showPane)
+        self.showPaneButton = ttk.Button(self.tabDefine, text='Glücksscheibe anzeigen', command=self.showPane, state=DISABLED)
         self.configFileLabel = ttk.Label(self.tabDefine, textvariable=self.configFile)
 
         # Second Tab
         self.tabLoad = ttk.Frame(self.notebook)
         self.tabLoad.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.notebook.add(self.tabLoad, text = "Ergebnisse laden")
+        self.notebook.add(self.tabLoad, text = "Ergebnisse laden", state=DISABLED)
         self.loadResultButton = ttk.Button(self.tabLoad, text='Datei laden', command=self.loadResult)
         self.resultFileLabel = ttk.Label(self.tabLoad, textvariable=self.resultFile)
         self.loadSeparator = ttk.Separator(self.tabLoad, orient='horizontal')
@@ -101,13 +101,13 @@ class MainWindow(ttk.Frame):
         # Third Tab
         self.tabTeams = ttk.Frame(self.notebook)
         self.tabTeams.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.notebook.add(self.tabTeams, text = "Teams")
-        self.showTeamDefinitionButton = ttk.Button(self.tabTeams, text='Teams festlegen' ,command=self.showTeamDefinition)
+        self.notebook.add(self.tabTeams, text = "Teams", state=DISABLED)
+        self.showTeamDefinitionButton = ttk.Button(self.tabTeams, text='Teams festlegen' ,command=self.showTeamDefinition, state=DISABLED)
 
         # Fourth Tab
         self.tabEvaluate = ttk.Frame(self.notebook)
         self.tabEvaluate.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.notebook.add(self.tabEvaluate, text = "Auswertung")
+        self.notebook.add(self.tabEvaluate, text = "Auswertung", state=DISABLED)
         self.scoringFrame = ttk.Labelframe(self.tabEvaluate, text='Falls Treffer mehrere Felder berührt, werte:')
         for text, mode in self.ScoringOptions:
             b = ttk.Radiobutton(self.scoringFrame, text=text, variable=self.Scoring, value=mode, command=self.evaluateResult)
@@ -159,10 +159,10 @@ class MainWindow(ttk.Frame):
         # Third Tab
         i = 0
         for text, mode in self.TeamOptions:
-            b = ttk.Radiobutton(self.tabTeams, text=text, variable=self.Team, value=mode)
+            b = ttk.Radiobutton(self.tabTeams, text=text, variable=self.Team, value=mode, command=self.teamSelectionChanged)
             b.grid(column=0, row=i, sticky=W, **innerOptions)
             i = i + 1
-        self.showTeamDefinitionButton.grid(column=1, row=1, rowspan=2, sticky=NS, **innerOptions)
+        self.showTeamDefinitionButton.grid(column=1, row=2, rowspan=2, sticky=NS, **innerOptions)
 
         # Fourth Tab
         self.scoringFrame.grid(column=0, row=0, columnspan=3, sticky=W, **innerOptions)
@@ -222,6 +222,8 @@ class MainWindow(ttk.Frame):
             values[i] = [int(x) for x in values[i].split(",")]
         self.values = values
         self.calculateGrid()
+        self.showPaneButton.config(state="normal")
+        self.notebook.tab(1 ,state="normal")
 
     def createPane(self):
         self.values = []
@@ -232,6 +234,8 @@ class MainWindow(ttk.Frame):
             self.values.append(val)
         self.calculateGrid()
         self.savePane()
+        self.showPaneButton.config(state="normal")
+        self.notebook.tab(1, state="normal")
 
     def savePane(self):
         filename = self.configFile.get()
@@ -270,6 +274,8 @@ class MainWindow(ttk.Frame):
             self.resultFile.set(filename)
             self.parseResultFile(filename)
             self.enableShowShooter()
+            self.notebook.tab(2, state="normal")
+            self.notebook.tab(3, state="normal")
 
     def showEval(self):
         self.showResultWindow()
@@ -591,7 +597,30 @@ class MainWindow(ttk.Frame):
             row = row + 1
 
     def showTeamDefinition(self):
-        print("teams")
+        self.newWindow = Toplevel(self.root)
+        self.app = TeamWindow(self.newWindow)
+        
+
+    def teamSelectionChanged(self):
+        if (self.Team.get() == "person" or self.Team.get() == "pane"):
+            self.showTeamDefinitionButton.config(state="normal")
+        else:
+            self.showTeamDefinitionButton.config(state=DISABLED)
+
+class TeamWindow(ttk.Frame):
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Teams definieren")
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.resizable(False, False)
+        innerOptions = dict(padx=5, pady=2)
+
+        cancelButton = ttk.Button(self.root, text='Abbrechen')
+        cancelButton.grid(column=0, row=0, sticky=W, **innerOptions)
+        okButton = ttk.Button(self.root, text='Übernehmen')
+        okButton.grid(column=1, row=0, sticky=W, **innerOptions)
+
 
 if __name__ == '__main__':
     MainWindow.main()
